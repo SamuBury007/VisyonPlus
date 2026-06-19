@@ -320,9 +320,8 @@ if __name__ == '__main__':
                 print(f"    {url}")
                 print(f"\n[+] Aprilo in VLC: Ctrl+N → incolla → Play")
             else:
-                print("\n[-] Nessuna playlist trovato")
+                print("\n[-] Nessuna playlist trovata")
         
         asyncio.run(main())
     else:
-        # Avvia l'app in locale se eseguito manualmente
         app.run(host='0.0.0.0', port=8080, debug=True)
