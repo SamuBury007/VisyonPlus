@@ -16,6 +16,15 @@ app = Flask(__name__)
 
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
 
+# ============================================================
+# Webshare Proxy Config
+# ============================================================
+PROXY_CONFIG = {
+    "server": "http://31.59.20.176:6754",
+    "username": "ecsdpfxz",
+    "password": "dq51iygaxyw6"
+}
+
 
 async def extract_playlist_url(movie_url):
     """
@@ -27,7 +36,10 @@ async def extract_playlist_url(movie_url):
     from playwright.async_api import async_playwright
     
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
+        browser = await p.chromium.launch(
+            headless=True,
+            proxy=PROXY_CONFIG
+        )
         context = await browser.new_context(
             user_agent=USER_AGENT,
             viewport={"width": 1280, "height": 720}
@@ -37,13 +49,11 @@ async def extract_playlist_url(movie_url):
         # Intercetta TUTTE le richieste
         async def handle_request(request):
             url = request.url
-            # Cerchiamo SOLO i link /playlist/ su vixsrc.to
             if "/playlist/" in url and "vixsrc.to" in url:
                 if url not in playlist_urls:
                     playlist_urls.append(url)
                     print(f"[+] PLAYLIST: {url}")
             
-            # Anche se ha /playlist/ in altri formati
             if "playlist" in url and "m3u8" in url:
                 if url not in playlist_urls:
                     playlist_urls.append(url)
@@ -51,7 +61,6 @@ async def extract_playlist_url(movie_url):
         
         async def handle_response(response):
             url = response.url
-            # Cattura anche i redirect che portano a playlist
             if "/playlist/" in url and "vixsrc.to" in url:
                 if url not in playlist_urls:
                     playlist_urls.append(url)
@@ -65,7 +74,6 @@ async def extract_playlist_url(movie_url):
         
         try:
             await page.goto(movie_url, wait_until="networkidle", timeout=30000)
-            # Aspetta più a lungo per catturare tutto
             for i in range(15):
                 await asyncio.sleep(1)
                 if playlist_urls:
@@ -74,23 +82,18 @@ async def extract_playlist_url(movie_url):
             print(f"[-] Timeout, ma continuo...")
             await asyncio.sleep(5)
         
-        # Prova anche con evaluate per estrarre direttamente dal JS
         try:
             print("[*] Provo estrazione dal JavaScript...")
             js_result = await page.evaluate("""
                 () => {
                     const results = [];
-                    // Cerca in tutti gli script tag
                     document.querySelectorAll('script').forEach(s => {
                         const text = s.textContent || '';
-                        // Cerca URL con /playlist/
                         const matches = text.match(/https?:\\/\\/[^'"\\s]*\\/playlist\\/[^'"\\s]*/g);
                         if (matches) results.push(...matches);
-                        // Cerca URL vixsrc.to/playlist
                         const matches2 = text.match(/vixsrc\\.to\\/playlist\\/[^'"\\s,&]*/g);
                         if (matches2) results.push(...matches2.map(u => 'https://' + u));
                     });
-                    // Cerca nel DOM
                     const all = document.querySelectorAll('*');
                     all.forEach(el => {
                         if (el.src && el.src.includes('/playlist/')) results.push(el.src);
@@ -101,7 +104,6 @@ async def extract_playlist_url(movie_url):
                 }
             """)
             for url in js_result:
-                # Normalizza: se inizia con // o è relativo
                 if url.startswith("//"):
                     url = "https:" + url
                 elif url.startswith("/"):
@@ -129,22 +131,17 @@ async def get_best_playlist(movie_url):
     for u in urls:
         print(f"   - {u}")
     
-    # Filtra: vogliamo quelli su vixsrc.to/playlist/
     vixsrc_playlists = [u for u in urls if "vixsrc.to/playlist/" in u]
     
     if vixsrc_playlists:
-        # Preferisci 1080p
         _1080p = [u for u in vixsrc_playlists if "1080p" in u or "1080" in u]
         if _1080p:
             return _1080p[0]
-        # Poi 720p
         _720p = [u for u in vixsrc_playlists if "720p" in u or "720" in u]
         if _720p:
             return _720p[0]
-        # Altrimenti il primo
         return vixsrc_playlists[0]
     
-    # Fallback: qualsiasi playlist
     if urls:
         return urls[0]
     
