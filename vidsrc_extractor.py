@@ -250,12 +250,10 @@ def api_extract():
         loop.close()
 
         if playlist_url:
-            # Restituiamo l'URL relay invece dell'URL diretto
-            relay = request.host_url.rstrip('/') + '/relay?url=' + quote(playlist_url, safe='')
+            # Restituiamo direttamente l'URL vixsrc.to
             return jsonify({
                 'success': True,
-                'url': relay,
-                'original_url': playlist_url,
+                'url': playlist_url,
             })
         else:
             return jsonify({'success': False, 'error': 'Nessun link playlist trovato.'})
