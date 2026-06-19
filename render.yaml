@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: vidsrc-extractor
+    runtime: python
+    buildCommand: ./build.sh
+    startCommand: python vidsrc_extractor.py
+    envVars:
+      - key: PORT
+        value: 8080
