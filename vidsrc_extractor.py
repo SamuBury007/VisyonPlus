@@ -16,18 +16,24 @@ app = Flask(__name__)
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
 
 # ============================================================
-# Webshare Proxy Config
+# Webshare Rotating Proxy Config
 # ============================================================
+PROXY_USER = "ecsdpfxz-rotate"
+PROXY_PASS = "dq51iygaxyw6"
+PROXY_HOST = "p.webshare.io"
+PROXY_PORT = "80"
+
+# Per Playwright
 PROXY_CONFIG = {
-    "server": "http://31.59.20.176:6754",
-    "username": "ecsdpfxz",
-    "password": "dq51iygaxyw6"
+    "server": f"http://{PROXY_HOST}:{PROXY_PORT}",
+    "username": PROXY_USER,
+    "password": PROXY_PASS,
 }
 
 # Per requests (HTTP proxy)
 REQUESTS_PROXIES = {
-    "http":  f"http://ecsdpfxz:dq51iygaxyw6@31.59.20.176:6754",
-    "https": f"http://ecsdpfxz:dq51iygaxyw6@31.59.20.176:6754",
+    "http":  f"http://{PROXY_USER}:{PROXY_PASS}@{PROXY_HOST}:{PROXY_PORT}",
+    "https": f"http://{PROXY_USER}:{PROXY_PASS}@{PROXY_HOST}:{PROXY_PORT}",
 }
 
 
